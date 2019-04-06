@@ -1,35 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import SummaryPurchase from "./SummaryPurchase";
 import SearchBar from "./SearchBar";
 import ListOfProducts from "./ListOfProducts";
 
 import { Container, Header } from "semantic-ui-react";
 
-class ProductTable extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      text: "",
-      stocked: false,
-      shoppingCard: [],
-      showCard: false
-    };
+const ProductTable = ({ products }) => {
+  const [text, useText] = useState("");
+  const [stocked, useStocked] = useState(false);
+  const [shoppingCard, useShoppingCard] = useState([]);
+  const [showCard, useShowCard] = useState(false);
 
-    this.showStockOnly = this.showStockOnly.bind(this);
-    this.handleSearchItem = this.handleSearchItem.bind(this);
-    this.handleAddProductToShoppingCard = this.handleAddProductToShoppingCard.bind(
-      this
-    );
-    this.showPurchasedProducts = this.showPurchasedProducts.bind(this);
-    this.deleteFromShoppingCard = this.deleteFromShoppingCard.bind(this);
-    this.handleBackToPurchase = this.handleBackToPurchase.bind(this);
-    this.increasePurchasedNumber = this.increasePurchasedNumber.bind(this);
-    this.decreasePurchasedNumber = this.decreasePurchasedNumber.bind(this);
-  }
-
-  decreasePurchasedNumber(product) {
+  function decreasePurchasedNumber(product) {
     const shoppings = [];
-    this.state.shoppingCard.forEach(item => {
+    shoppingCard.forEach(item => {
       if (item.name === product.name) {
         let newItem = { ...item, numberItems: item.numberItems - 1 };
         shoppings.push(newItem);
@@ -37,16 +21,13 @@ class ProductTable extends React.Component {
         shoppings.push(item);
       }
 
-      this.setState({
-        ...this.state,
-        shoppingCard: shoppings
-      });
+      useShoppingCard(shoppings);
     });
   }
 
-  increasePurchasedNumber(product) {
+  function increasePurchasedNumber(product) {
     const shoppings = [];
-    this.state.shoppingCard.forEach(item => {
+    shoppingCard.forEach(item => {
       if (item.name === product.name) {
         let newItem = { ...item, numberItems: item.numberItems + 1 };
         shoppings.push(newItem);
@@ -54,83 +35,52 @@ class ProductTable extends React.Component {
         shoppings.push(item);
       }
 
-      this.setState({
-        ...this.state,
-        shoppingCard: shoppings
-      });
+      useShoppingCard(shoppings);
     });
   }
 
-  showStockOnly(stocked) {
-    this.setState({ stocked });
-  }
+  function deleteFromShoppingCard(product) {
+    useShoppingCard(shoppingCard.filter(item => item.name !== product.name));
 
-  handleBackToPurchase() {
-    this.setState({ showCard: false });
-  }
-
-  handleSearchItem(text) {
-    this.setState({ text });
-  }
-
-  handleAddProductToShoppingCard(product) {
-    this.setState({
-      ...this.state,
-      shoppingCard: this.state.shoppingCard.concat(product)
-    });
-  }
-
-  showPurchasedProducts(showCard) {
-    this.setState({ showCard });
-  }
-
-  deleteFromShoppingCard(product) {
-    this.setState({
-      ...this.state,
-      shoppingCard: this.state.shoppingCard.filter(
-        item => item.name !== product.name
-      )
-    });
-    if (this.state.shoppingCard.length === 0) {
-      this.setState({ showCard: false });
+    if (shoppingCard.length === 0) {
+      useShowCard(false);
     }
   }
 
-  render() {
-    const products = this.props.products;
-
-    return (
-      <Container>
-        {!this.state.showCard && (
-          <SearchBar
-            {...this.state}
-            toCheckboxChange={this.showStockOnly}
-            toChangeInput={this.handleSearchItem}
-            toShowingShoppingCard={this.showPurchasedProducts}
-          />
-        )}
-        {this.state.showCard && (
-          <Header as="h3" dividing>
-            Summary of Purchase
-          </Header>
-        )}
-        <ListOfProducts
-          products={products}
-          {...this.state}
-          increaseShoppingList={this.handleAddProductToShoppingCard}
-          toDeleteProduct={this.deleteFromShoppingCard}
-          toHandleIncreaseNumber={this.increasePurchasedNumber}
-          toHandleDecreaseNumber={this.decreasePurchasedNumber}
+  const objState = { text, stocked, shoppingCard, showCard };
+  return (
+    <Container>
+      {!showCard && (
+        <SearchBar
+          {...objState}
+          toCheckboxChange={stocked => useStocked(stocked)}
+          toChangeInput={text => useText(text)}
+          toShowingShoppingCard={showCard => useShowCard(showCard)}
         />
-        {this.state.showCard && (
-          <SummaryPurchase
-            purchases={this.state.shoppingCard}
-            backToPurchase={this.handleBackToPurchase}
-          />
-        )}
-      </Container>
-    );
-  }
-}
+      )}
+      {showCard && (
+        <Header as="h3" dividing>
+          Summary of Purchase
+        </Header>
+      )}
+      <ListOfProducts
+        products={products}
+        {...objState}
+        increaseShoppingList={product =>
+          useShoppingCard(shoppingCard.concat(product))
+        }
+        toDeleteProduct={product => deleteFromShoppingCard(product)}
+        toHandleIncreaseNumber={product => increasePurchasedNumber(product)}
+        toHandleDecreaseNumber={product => decreasePurchasedNumber(product)}
+      />
+      {showCard && (
+        <SummaryPurchase
+          purchases={shoppingCard}
+          backToPurchase={() => useShowCard(false)}
+        />
+      )}
+    </Container>
+  );
+};
 
 export default ProductTable;
